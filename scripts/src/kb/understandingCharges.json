@@ -1,0 +1,23 @@
+{
+    "id": "kb-005",
+    "title": "Understanding Credit Card Statement Charges",
+    "topic": "Billing Inquiries",
+    "category": "Customer Support",
+    "content": "Help customers understand their credit card statement:\n\n1. Walk through statement sections: Previous Balance, Payments, New Charges, Interest, Fees.\n2. Explain different charge types:\n   - Purchase transactions (merchant name, date, amount)\n   - Cash advances (higher interest rate, immediate interest charges)\n   - Balance transfers (promotional rates may apply)\n   - Fees (annual, late payment, over-limit, foreign transaction)\n3. Clarify interest calculation: Daily periodic rate x average daily balance.\n4. Explain minimum payment calculation (typically 2-3% of balance or $25 minimum).\n5. Show how payment allocation works (minimum to fees/interest, excess to highest APR balances).\n6. Identify any promotional rates and expiration dates.\n7. Explain statement closing date vs. payment due date (typically 21-25 day grace period).\n\nFor specific merchant questions, provide merchant contact information from statement.",
+    "metadata": {
+      "author": "Billing Team",
+      "last_updated": "2025-08-28",
+      "region": "US",
+      "importance": "Medium"
+    },
+    "related_articles": [
+      {
+        "id": "kb-006",
+        "title": "Making Credit Card Payments"
+      },
+      {
+        "id": "kb-004",
+        "title": "Disputing Unauthorized Credit Card Transactions"
+      }
+    ]
+  }

@@ -1,0 +1,128 @@
+/* chatIframe.css */
+
+.chat-iframe-container {
+    position: relative;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 400px;
+}
+
+.chat-iframe-container.has-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Loading State */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    min-height: 400px;
+}
+
+.loading-text {
+    margin-top: 1rem;
+    color: #706e6b;
+    font-size: 0.875rem;
+}
+
+/* Error State */
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    min-height: 400px;
+}
+
+.error-title {
+    margin: 1rem 0 0.5rem 0;
+    color: #ba0517;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.error-message {
+    color: #706e6b;
+    margin-bottom: 1.5rem;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+.retry-button {
+    margin-top: 0.5rem;
+}
+
+/* Iframe Wrapper */
+.iframe-wrapper {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Footer */
+.chat-footer {
+    background: #f3f3f3;
+    border-top: 1px solid #e5e5e5;
+}
+
+.footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+}
+
+.footer-text {
+    font-size: 0.75rem;
+    color: #706e6b;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .iframe-wrapper {
+        margin: -0.5rem;
+        border-radius: 0;
+    }
+    
+    .loading-container,
+    .error-container {
+        min-height: 300px;
+        padding: 2rem 1rem;
+    }
+}
+
+/* Custom iframe styling */
+iframe {
+    display: block;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Hide iframe while loading */
+.chat-iframe-container.loading iframe {
+    opacity: 0;
+}
+
+/* Animation for iframe load */
+.iframe-wrapper iframe {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

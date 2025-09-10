@@ -1,0 +1,23 @@
+ {
+    "id": "kb-008",
+    "title": "Troubleshooting Mobile App Issues",
+    "topic": "Technical Support",
+    "category": "Digital Banking",
+    "content": "Common mobile app troubleshooting steps:\n\n1. Verify app version (check app store for updates):\n   - iOS: Requires iOS 14.0 or later\n   - Android: Requires Android 8.0 or later\n\n2. Login issues:\n   - Confirm same credentials as online banking\n   - Check for account lockout due to failed attempts\n   - Verify biometric authentication is properly set up\n\n3. App performance problems:\n   - Force close app and restart\n   - Check available device storage (need 1GB free minimum)\n   - Restart device if app continues to freeze\n\n4. Connection issues:\n   - Verify strong WiFi or cellular signal\n   - Try switching between WiFi and cellular data\n   - Check if other banking apps are working\n\n5. Feature-specific issues:\n   - Mobile deposit: Ensure proper lighting and check positioning\n   - Bill pay: Verify payee information and account balances\n   - Transfers: Check daily transfer limits\n\n6. If issues persist: Uninstall and reinstall app, or escalate to Digital Banking Support.\n\nNote: Business hours for Digital Banking Support: Mon-Fri 8AM-8PM ET, Sat-Sun 9AM-5PM ET.",
+    "metadata": {
+      "author": "Digital Banking Team",
+      "last_updated": "2025-09-02",
+      "region": "US",
+      "importance": "Medium"
+    },
+    "related_articles": [
+      {
+        "id": "kb-002",
+        "title": "Logging into Your Online Account"
+      },
+      {
+        "id": "kb-006",
+        "title": "Making Credit Card Payments"
+      }
+    ]
+  }

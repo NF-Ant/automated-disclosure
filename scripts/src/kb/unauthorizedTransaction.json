@@ -1,0 +1,23 @@
+ {
+    "id": "kb-004",
+    "title": "Disputing Unauthorized Credit Card Transactions",
+    "topic": "Fraud Protection",
+    "category": "Fraud Prevention",
+    "content": "Process for handling disputed transactions:\n\n1. Ask customer to identify specific transactions they didn't authorize.\n2. Verify customer identity and confirm they have possession of the physical card.\n3. Explain the difference between fraud (unauthorized use) and billing disputes (merchant issues).\n4. For fraud: File dispute immediately, issue provisional credit within 2 business days.\n5. For billing disputes: Customer must first attempt to resolve with merchant.\n6. Document all transaction details: date, amount, merchant name, customer explanation.\n7. Request supporting documentation (receipts, emails, etc.) within 10 days.\n8. Explain investigation timeline: 45-90 days for credit cards, 10 days for debit cards.\n9. Issue new card if fraud is confirmed.\n\nNote: Customer liability is limited to $50 for credit cards, $500 for debit cards if reported within 2 business days.",
+    "metadata": {
+      "author": "Fraud Team",
+      "last_updated": "2025-08-30",
+      "region": "US",
+      "importance": "Critical"
+    },
+    "related_articles": [
+      {
+        "id": "kb-003",
+        "title": "Replacing a Stolen or Lost Credit Card"
+      },
+      {
+        "id": "kb-005",
+        "title": "Understanding Credit Card Statement Charges"
+      }
+    ]
+  }

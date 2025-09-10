@@ -1,0 +1,349 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Lambda function to sync Salesforce Knowledge Articles to S3 and trigger Bedrock Knowledge Base sync'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name (dev, staging, prod)
+    
+  S3BucketName:
+    Type: String
+    Default: barclays-poc-kb-knowledge-articles
+    Description: S3 bucket name for storing knowledge articles
+    
+  KnowledgeBaseId:
+    Type: String
+    Default: 2YLLDJTK0F
+    Description: Bedrock Knowledge Base ID
+    
+  DataSourceId:
+    Type: String
+    Description: Bedrock Knowledge Base Data Source ID
+    
+  LambdaTimeout:
+    Type: Number
+    Default: 60
+    Description: Lambda function timeout in seconds
+    
+  LambdaMemory:
+    Type: Number
+    Default: 256
+    Description: Lambda function memory in MB
+
+Resources:
+  # IAM Role for Lambda Function
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'sf-knowledge-sync-lambda-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:GetObject
+                Resource: !Sub 'arn:aws:s3:::${S3BucketName}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub 'arn:aws:s3:::${S3BucketName}'
+        - PolicyName: BedrockAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:StartIngestionJob
+                  - bedrock:GetIngestionJob
+                  - bedrock:ListIngestionJobs
+                Resource: 
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${KnowledgeBaseId}'
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${KnowledgeBaseId}/data-source/${DataSourceId}'
+
+  # Lambda Function
+  SalesforceKnowledgeSyncFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'sf-knowledge-s3-sync-${Environment}'
+      Runtime: python3.11
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: !Ref LambdaTimeout
+      MemorySize: !Ref LambdaMemory
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref S3BucketName
+          KNOWLEDGE_BASE_ID: !Ref KnowledgeBaseId
+          DATA_SOURCE_ID: !Ref DataSourceId
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          import re
+          from datetime import datetime
+          from html import unescape
+          from typing import Dict, Any
+
+          # Initialize AWS clients
+          s3_client = boto3.client('s3')
+          bedrock_client = boto3.client('bedrock-agent')
+
+          def lambda_handler(event, context):
+              """
+              Process Salesforce Knowledge Articles and sync to S3
+              """
+              try:
+                  # Parse the incoming request
+                  if isinstance(event.get('body'), str):
+                      body = json.loads(event['body'])
+                  else:
+                      body = event.get('body', event)
+                  
+                  print(f"Received article data: {json.dumps(body, indent=2)}")
+                  
+                  # Process the article
+                  processed_article = process_article(body)
+                  
+                  # Upload to S3
+                  s3_key = upload_to_s3(processed_article)
+                  
+                  # Trigger Knowledge Base sync
+                  sync_knowledge_base()
+                  
+                  return {
+                      'statusCode': 200,
+                      'headers': {
+                          'Content-Type': 'application/json',
+                          'Access-Control-Allow-Origin': '*'
+                      },
+                      'body': json.dumps({
+                          'status': 'success',
+                          'message': f'Article {processed_article["id"]} processed successfully',
+                          's3_key': s3_key
+                      })
+                  }
+                  
+              except Exception as e:
+                  print(f"Error processing article: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'headers': {
+                          'Content-Type': 'application/json',
+                          'Access-Control-Allow-Origin': '*'
+                      },
+                      'body': json.dumps({
+                          'status': 'error',
+                          'message': str(e)
+                      })
+                  }
+
+          def process_article(article_data: Dict[str, Any]) -> Dict[str, Any]:
+              """
+              Process and clean the article data from Salesforce
+              """
+              # Clean and process the rich text content
+              raw_content = article_data.get('content', '')
+              cleaned_content = clean_rich_text(raw_content)
+              
+              # Build the processed article
+              processed_article = {
+                  'id': article_data.get('id', 'unknown'),
+                  'title': article_data.get('title', 'Untitled'),
+                  'topic': article_data.get('topic', 'Knowledge Base'),
+                  'category': article_data.get('category', 'Customer Support'),
+                  'content': cleaned_content,
+                  'metadata': {
+                      'author': article_data.get('metadata', {}).get('author', 'System'),
+                      'last_updated': article_data.get('metadata', {}).get('last_updated', datetime.now().strftime('%Y-%m-%d')),
+                      'region': article_data.get('metadata', {}).get('region', 'US'),
+                      'importance': article_data.get('metadata', {}).get('importance', 'Medium'),
+                      'source': 'Salesforce Knowledge'
+                  },
+                  'related_articles': article_data.get('related_articles', [])
+              }
+              
+              return processed_article
+
+          def clean_rich_text(html_content: str) -> str:
+              """
+              Clean HTML rich text content for better processing by Bedrock
+              """
+              if not html_content:
+                  return ''
+              
+              # Unescape HTML entities
+              content = unescape(html_content)
+              
+              # Remove excessive whitespace and newlines
+              content = re.sub(r'\n\s*\n', '\n\n', content)
+              content = re.sub(r'<p>\s*&nbsp;\s*</p>', '', content)
+              content = re.sub(r'<p>\s*</p>', '', content)
+              content = re.sub(r'<li>\s*</li>', '', content)
+              
+              # Clean up common Salesforce rich text issues
+              content = re.sub(r'<p>\s*\\n\\n\s*</p>', '', content)
+              content = re.sub(r'\\n', '\n', content)
+              
+              # Convert HTML to more readable format while preserving structure
+              # Replace headings with markdown-style headers
+              content = re.sub(r'<h([1-6])>(.*?)</h[1-6]>', r'\n\n\1. \2\n\n', content)
+              
+              # Convert lists to text format
+              content = re.sub(r'<ol>', '\n', content)
+              content = re.sub(r'</ol>', '\n', content)
+              content = re.sub(r'<ul>', '\n', content)
+              content = re.sub(r'</ul>', '\n', content)
+              content = re.sub(r'<li>(.*?)</li>', r'- \1\n', content)
+              
+              # Convert paragraphs
+              content = re.sub(r'<p>(.*?)</p>', r'\1\n\n', content)
+              
+              # Handle bold/emphasis
+              content = re.sub(r'<strong>(.*?)</strong>', r'**\1**', content)
+              content = re.sub(r'<b>(.*?)</b>', r'**\1**', content)
+              content = re.sub(r'<em>(.*?)</em>', r'*\1*', content)
+              content = re.sub(r'<i>(.*?)</i>', r'*\1*', content)
+              
+              # Remove remaining HTML tags
+              content = re.sub(r'<[^>]+>', '', content)
+              
+              # Clean up extra whitespace
+              content = re.sub(r'\n{3,}', '\n\n', content)
+              content = content.strip()
+              
+              return content
+
+          def upload_to_s3(article: Dict[str, Any]) -> str:
+              """
+              Upload processed article to S3
+              """
+              bucket_name = os.environ['S3_BUCKET_NAME']
+              s3_key = f"{article['id']}.json"
+              
+              # Convert to JSON
+              article_json = json.dumps(article, indent=2, ensure_ascii=False)
+              
+              try:
+                  # Upload to S3
+                  s3_client.put_object(
+                      Bucket=bucket_name,
+                      Key=s3_key,
+                      Body=article_json,
+                      ContentType='application/json',
+                      Metadata={
+                          'article_id': article['id'],
+                          'title': article['title'][:100],  # Truncate for metadata limits
+                          'last_updated': article['metadata']['last_updated']
+                      }
+                  )
+                  
+                  print(f"Successfully uploaded article to s3://{bucket_name}/{s3_key}")
+                  return s3_key
+                  
+              except Exception as e:
+                  print(f"Error uploading to S3: {str(e)}")
+                  raise
+
+          def sync_knowledge_base():
+              """
+              Trigger Bedrock Knowledge Base sync
+              """
+              knowledge_base_id = os.environ.get('KNOWLEDGE_BASE_ID')
+              data_source_id = os.environ.get('DATA_SOURCE_ID')
+              
+              if not knowledge_base_id or not data_source_id:
+                  print("Knowledge Base ID or Data Source ID not configured, skipping sync")
+                  return
+              
+              try:
+                  # Start ingestion job
+                  response = bedrock_client.start_ingestion_job(
+                      knowledgeBaseId=knowledge_base_id,
+                      dataSourceId=data_source_id,
+                      description='Salesforce Knowledge Article Sync'
+                  )
+                  
+                  print(f"Started Knowledge Base sync job: {response['ingestionJob']['ingestionJobId']}")
+                  
+              except Exception as e:
+                  print(f"Error starting Knowledge Base sync: {str(e)}")
+                  # Don't fail the entire process if sync fails
+                  pass
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: salesforce-knowledge-sync
+
+  # Lambda Function URL for Salesforce to call
+  LambdaFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt SalesforceKnowledgeSyncFunction.Arn
+      AuthType: NONE
+      Cors:
+        AllowCredentials: false
+        AllowHeaders:
+          - content-type
+          - x-amz-date
+          - authorization
+          - x-api-key
+        AllowMethods:
+          - POST
+        AllowOrigins:
+          - '*'
+        ExposeHeaders:
+          - date
+          - keep-alive
+        MaxAge: 86400
+
+  # Permission for Function URL
+  LambdaFunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SalesforceKnowledgeSyncFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'
+      FunctionUrlAuthType: NONE
+
+  # CloudWatch Log Group
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/sf-knowledge-s3-sync-${Environment}'
+      RetentionInDays: 30
+
+Outputs:
+  LambdaFunctionArn:
+    Description: 'Lambda function ARN'
+    Value: !GetAtt SalesforceKnowledgeSyncFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaArn'
+
+  LambdaFunctionUrl:
+    Description: 'Lambda function URL for Salesforce Named Credential'
+    Value: !GetAtt LambdaFunctionUrl.FunctionUrl
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaUrl'
+
+  LambdaFunctionName:
+    Description: 'Lambda function name'
+    Value: !Ref SalesforceKnowledgeSyncFunction
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaName'

@@ -1,0 +1,23 @@
+{
+    "id": "kb-003",
+    "title": "Replacing a Stolen or Lost Credit Card",
+    "topic": "Card Services",
+    "category": "Fraud Prevention",
+    "content": "When a customer reports a stolen or lost credit card:\n\n1. Immediately place a temporary hold on the card to prevent unauthorized use.\n2. Verify customer identity using security questions and account information.\n3. Review recent transactions with the customer to identify any fraudulent activity.\n4. If fraud is suspected, transfer to Fraud Department immediately.\n5. Order a replacement card with expedited shipping (2-3 business days, $15 fee).\n6. Inform customer the new card will have a different number but same account.\n7. Set up automatic payments transfer to new card if requested.\n8. Provide temporary card number for urgent online purchases if eligible.\n\nReminder: Stolen cards require a police report number for fraud protection coverage.",
+    "metadata": {
+      "author": "Fraud Team",
+      "last_updated": "2025-09-01",
+      "region": "US",
+      "importance": "Critical"
+    },
+    "related_articles": [
+      {
+        "id": "kb-004",
+        "title": "Disputing Unauthorized Credit Card Transactions"
+      },
+      {
+        "id": "kb-009",
+        "title": "Setting Up Automatic Payments"
+      }
+    ]
+  }

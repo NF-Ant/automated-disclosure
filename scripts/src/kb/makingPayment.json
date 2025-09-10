@@ -1,0 +1,23 @@
+{
+    "id": "kb-006",
+    "title": "Making Credit Card Payments",
+    "topic": "Payment Processing",
+    "category": "Customer Support",
+    "content": "Guide customers through payment options:\n\n1. Online payments (immediate, no fee):\n   - Log into online banking or mobile app\n   - Select 'Pay Bills' or 'Credit Card Payment'\n   - Choose amount and payment date\n   - Confirm bank account or debit card for payment\n\n2. Phone payments (24/7 automated system, $10 fee for agent-assisted):\n   - Call automated payment line: 1-800-PAY-CARD\n   - Have account number and payment method ready\n   - Same-day processing if made before 8 PM ET\n\n3. Mail payments (5-7 business days processing):\n   - Use payment coupon from statement\n   - Include account number on check\n   - Mail to address on statement (varies by region)\n\n4. In-branch payments (immediate posting, no fee)\n   - Bring statement or account number\n   - Cash, check, or transfer from another account\n\nReminder: Payments made after 8 PM ET are processed next business day.",
+    "metadata": {
+      "author": "Payment Operations",
+      "last_updated": "2025-09-01",
+      "region": "US",
+      "importance": "High"
+    },
+    "related_articles": [
+      {
+        "id": "kb-005",
+        "title": "Understanding Credit Card Statement Charges"
+      },
+      {
+        "id": "kb-009",
+        "title": "Setting Up Automatic Payments"
+      }
+    ]
+  }

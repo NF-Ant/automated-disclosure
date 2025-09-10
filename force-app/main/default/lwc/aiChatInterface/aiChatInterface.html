@@ -1,0 +1,44 @@
+<template>
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <h1 class="chat-title">AI Assistant</h1>
+            <div class="connection-status">
+                <div class={statusIndicatorClass}></div>
+                <span>{statusText}</span>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div if:true={errorMessage} class="error-message">
+            {errorMessage}
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" lwc:dom="manual"></div>
+
+        <!-- Input Container -->
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <textarea 
+                    class="chat-input" 
+                    placeholder="Type your message here..."
+                    rows="1"
+                    value={inputValue}
+                    oninput={handleInputChange}
+                    onkeydown={handleKeyDown}
+                ></textarea>
+                <button 
+                    class="send-button" 
+                    disabled={isSendDisabled}
+                    onclick={sendMessage}
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>

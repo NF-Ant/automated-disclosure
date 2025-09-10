@@ -1,0 +1,23 @@
+{
+    "id": "kb-009",
+    "title": "Setting Up Automatic Payments",
+    "topic": "Payment Automation",
+    "category": "Customer Support",
+    "content": "Help customers set up automatic payments for credit cards and loans:\n\n1. Payment options to explain:\n   - Minimum payment due (safest option)\n   - Fixed amount (customer specifies dollar amount)\n   - Full statement balance (pays entire balance)\n\n2. Setup through online banking:\n   - Login to online banking\n   - Navigate to 'AutoPay' or 'Automatic Payments'\n   - Select account to pay from (checking/savings)\n   - Choose payment amount and date preference\n   - Confirm setup and save\n\n3. Payment timing:\n   - Payments process 3 business days before due date\n   - Customer can change or cancel anytime\n   - Manual payments can still be made in addition to AutoPay\n\n4. Important considerations:\n   - Ensure sufficient funds in payment account\n   - AutoPay continues even if payment account changes\n   - Customer receives email confirmation 2 days before each payment\n   - Failed payments incur $35 returned payment fee\n\n5. For loan payments: Similar process but typically fixed amount based on monthly payment due.\n\nNote: AutoPay enrollment takes effect with the next statement cycle.",
+    "metadata": {
+      "author": "Payment Operations",
+      "last_updated": "2025-08-29",
+      "region": "US",
+      "importance": "Medium"
+    },
+    "related_articles": [
+      {
+        "id": "kb-006",
+        "title": "Making Credit Card Payments"
+      },
+      {
+        "id": "kb-003",
+        "title": "Replacing a Stolen or Lost Credit Card"
+      }
+    ]
+  }

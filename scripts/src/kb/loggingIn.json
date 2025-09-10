@@ -1,0 +1,23 @@
+{
+    "id": "kb-002",
+    "title": "Logging into Your Online Account",
+    "topic": "Account Access",
+    "category": "Customer Support",
+    "content": "To help customers log into their online account:\n\n1. Verify the customer's identity using two forms of identification (name, DOB, SSN last 4, address).\n2. Confirm they are using the correct website URL (www.bank.com/login).\n3. Check if they are using the correct username (usually email or account number).\n4. If they remember their password, have them try logging in.\n5. If the account is locked due to multiple failed attempts, wait 15 minutes before trying again.\n6. For persistent issues, verify browser compatibility (Chrome, Firefox, Safari, Edge supported).\n7. Clear browser cache and cookies if login issues persist.\n\nNote: Mobile app login uses the same credentials. If issues persist after troubleshooting, escalate to Technical Support.",
+    "metadata": {
+      "author": "Support Team",
+      "last_updated": "2025-09-02",
+      "region": "US",
+      "importance": "High"
+    },
+    "related_articles": [
+      {
+        "id": "kb-001",
+        "title": "Resetting Your Online Account Password"
+      },
+      {
+        "id": "kb-008",
+        "title": "Troubleshooting Mobile App Issues"
+      }
+    ]
+  }

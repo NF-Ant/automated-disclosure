@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Bedrock Knowledge Base, Data Source, and Lambda sync function'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Deployment environment (dev, staging, prod)
+
+  BedrockModelId:
+    Type: String
+    Default: anthropic.claude-3-5-sonnet-20241022-v2:0
+    Description: Bedrock model ID for the Knowledge Base
+
+  LambdaTimeout:
+    Type: Number
+    Default: 60
+    Description: Lambda function timeout (seconds)
+
+  LambdaMemory:
+    Type: Number
+    Default: 256
+    Description: Lambda function memory (MB)
+
+  # Values passed manually from infra stack
+  S3BucketArn:
+    Type: String
+    Description: ARN of the S3 bucket created in infra stack
+
+  S3BucketName:
+    Type: String
+    Description: Name of the S3 bucket created in infra stack
+
+  BedrockRoleArn:
+    Type: String
+    Description: ARN of the IAM role created in infra stack for Bedrock Knowledge Base
+
+  OpenSearchCollectionArn:
+    Type: String
+    Description: ARN of the OpenSearch Serverless collection created in infra stack
+
+Resources:
+  SalesforceKnowledgeBase:
+    Type: AWS::Bedrock::KnowledgeBase
+    Properties:
+      Name: !Sub 'salesforce-knowledge-base-${Environment}'
+      RoleArn: !Ref BedrockRoleArn
+      KnowledgeBaseConfiguration:
+        Type: VECTOR
+        VectorKnowledgeBaseConfiguration:
+          EmbeddingModelArn: !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0'
+      StorageConfiguration:
+        Type: OPENSEARCH_SERVERLESS
+        OpensearchServerlessConfiguration:
+          CollectionArn: !Ref OpenSearchCollectionArn
+          VectorIndexName: !Sub 'salesforce-kb-${Environment}-index'
+          FieldMapping:
+            VectorField: vector
+            TextField: text
+            MetadataField: metadata
+
+  KnowledgeBaseDataSource:
+    Type: AWS::Bedrock::DataSource
+    Properties:
+      KnowledgeBaseId: !Ref SalesforceKnowledgeBase
+      DataSourceConfiguration:
+        Type: S3
+        S3Configuration:
+          BucketArn: !Ref S3BucketArn
+      VectorIngestionConfiguration:
+        ChunkingConfiguration:
+          ChunkingStrategy: FIXED_SIZE
+          FixedSizeChunkingConfiguration:
+            MaxTokens: 300
+            OverlapPercentage: 20
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'sf-knowledge-sync-lambda-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SalesforceKnowledgeSyncFunction:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - SalesforceKnowledgeBase
+      - KnowledgeBaseDataSource
+    Properties:
+      FunctionName: !Sub 'sf-knowledge-s3-sync-${Environment}'
+      Runtime: python3.11
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: !Ref LambdaTimeout
+      MemorySize: !Ref LambdaMemory
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref S3BucketName
+          KNOWLEDGE_BASE_ID: !Ref SalesforceKnowledgeBase
+          DATA_SOURCE_ID: !Ref KnowledgeBaseDataSource
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              return {"statusCode": 200, "body": "Hello from sync lambda"}
+
+  LambdaFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt SalesforceKnowledgeSyncFunction.Arn
+      AuthType: NONE
+      Cors:
+        AllowMethods: [POST]
+        AllowOrigins: ['*']
+
+  LambdaFunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SalesforceKnowledgeSyncFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'
+      FunctionUrlAuthType: NONE
+
+Outputs:
+  KnowledgeBaseId:
+    Value: !Ref SalesforceKnowledgeBase
+    Description: Bedrock Knowledge Base ID
+
+  DataSourceId:
+    Value: !Ref KnowledgeBaseDataSource
+    Description: Bedrock Data Source ID
+
+  LambdaFunctionUrl:
+    Value: !GetAtt LambdaFunctionUrl.FunctionUrl
+    Description: Lambda function URL for Salesforce integration

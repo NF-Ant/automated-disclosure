@@ -1,0 +1,23 @@
+{
+  "id": "kb-001",
+  "title": "Resetting Your Online Account Password",
+  "topic": "Account Access",
+  "category": "Customer Support",
+  "content": "If a customer needs to reset their online account password, follow these steps: \n\n1. Ask the customer to go to the login page of the online account portal.\n2. Click on 'Forgot Password'.\n3. Enter the email address or username associated with the account.\n4. The system will send a password reset link to the registered email address.\n5. Instruct the customer to click the link and create a new password.\n6. Remind the customer to use a strong password and not reuse previous passwords.\n\nIf the customer does not receive the email, verify that the email address on file is correct. If needed, escalate to Tier 2 support to manually reset the password.",
+  "metadata": {
+    "author": "Support Team",
+    "last_updated": "2025-09-02",
+    "region": "US",
+    "importance": "High"
+  },
+  "related_articles": [
+    {
+      "id": "kb-002",
+      "title": "Logging into Your Online Account"
+    },
+    {
+      "id": "kb-003",
+      "title": "Replacing a Stolen or Lost Credit Card"
+    }
+  ]
+}

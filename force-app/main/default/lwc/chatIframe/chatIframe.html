@@ -1,0 +1,55 @@
+<template>
+    <lightning-card title="AI Chat Assistant" icon-name="standard:live_chat">
+        <div class={containerClass}>
+            
+            <!-- Loading State -->
+            <template if:true={isLoading}>
+                <div class="loading-container">
+                    <lightning-spinner alternative-text={loadingMessage} size="medium"></lightning-spinner>
+                    <p class="loading-text">{loadingMessage}</p>
+                </div>
+            </template>
+            
+            <!-- Error State -->
+            <template if:true={hasError}>
+                <div class="error-container">
+                    <lightning-icon icon-name="utility:error" variant="error" size="medium"></lightning-icon>
+                    <h3 class="error-title">Chat Unavailable</h3>
+                    <p class="error-message">{errorMessage}</p>
+                    <template if:true={showRetryButton}>
+                        <lightning-button 
+                            label="Retry" 
+                            variant="brand" 
+                            onclick={retryLoad}
+                            class="retry-button">
+                        </lightning-button>
+                    </template>
+                </div>
+            </template>
+            
+            <!-- Chat Iframe -->
+            <template if:false={hasError}>
+                <div class="iframe-wrapper">
+                    <iframe 
+                        src={iframeSrc}
+                        style={iframeStyle}
+                        title="AI Chat Interface"
+                        onload={handleIframeLoad}
+                        onerror={handleIframeError}
+                        allow="clipboard-write; microphone; camera"
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+                        loading="eager">
+                    </iframe>
+                </div>
+            </template>
+            
+            <!-- Footer with connection info -->
+            <div slot="footer" class="chat-footer">
+                <div class="footer-content">
+                    <lightning-icon icon-name="utility:connected_apps" size="x-small"></lightning-icon>
+                    <span class="footer-text">Powered by Claude AI via AWS Bedrock</span>
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+</template>

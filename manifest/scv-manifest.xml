@@ -2,10 +2,10 @@
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>NF_UserManagementService</members>
-        <members>NF_UserUpdateTriggerHandler</members>
-        <members>NF_UserUploadBatch</members>
         <members>NF_UserManagementServiceTest</members>
+        <members>NF_UserUpdateTriggerHandler</members>
         <members>NF_UserUpdateTriggerHandlerTest</members>
+        <members>NF_UserUploadBatch</members>
         <members>NF_UserUploadBatchTest</members>
         <name>ApexClass</name>
     </types>
@@ -18,20 +18,20 @@
         <name>CustomField</name>
     </types>
     <types>
-        <members>Amazon_Basic_Routing_Profile_Id</members>
         <members>Amazon_Admin_Security_Profile_Id</members>
+        <members>Amazon_Basic_Routing_Profile_Id</members>
+        <members>Amazon_CallCenter_InternalName</members>
         <members>Amazon_Instance_Id</members>
         <members>SCV_AWS_Named_Credentials</members>
-        <members>Amazon_CallCenter_InternalName</members>
+        <name>CustomLabel</name>
+    </types>
+    <types>
+        <members>CustomLabels</members>
         <name>CustomLabels</name>
     </types>
     <types>
         <members>AWS_Connect_API</members>
         <name>NamedCredential</name>
     </types>
-    <types>
-        <members>Amazon_Connect_CallCenter</members>
-        <name>CallCenter</name>
-    </types>
-    <version>58.0</version>
+    <version>64.0</version>
 </Package>

@@ -1,0 +1,23 @@
+{
+    "id": "kb-010",
+    "title": "Understanding Overdraft Protection Options",
+    "topic": "Overdraft Services",
+    "category": "Account Management",
+    "content": "Explain overdraft protection options to customers:\n\n1. Standard Overdraft Coverage:\n   - Covers checks, ACH transactions, and automatic payments\n   - $35 fee per transaction (maximum 6 fees per day)\n   - Must opt-in for debit card and ATM overdrafts\n\n2. Overdraft Protection Transfer:\n   - Links checking account to savings, money market, or credit card\n   - Automatic transfer when account would overdraft\n   - $10 transfer fee (less than overdraft fee)\n   - Must maintain minimum balance in backup account\n\n3. Overdraft Line of Credit:\n   - Credit line attached to checking account\n   - Interest charges only on amount used\n   - Requires credit application and approval\n   - $5 annual fee, prime + 3% interest rate\n\n4. No overdraft coverage:\n   - Transactions are declined if insufficient funds\n   - No fees for declined transactions\n   - May still incur fees for returned checks\n\n5. Setting up protection:\n   - Can be done online, by phone, or in branch\n   - Changes take effect within 1-2 business days\n   - Customer can modify or cancel anytime\n\nReminder: Explain reg E rights regarding debit card overdrafts.",
+    "metadata": {
+      "author": "Deposit Operations",
+      "last_updated": "2025-08-27",
+      "region": "US",
+      "importance": "High"
+    },
+    "related_articles": [
+      {
+        "id": "kb-007",
+        "title": "Opening a New Checking Account"
+      },
+      {
+        "id": "kb-006",
+        "title": "Making Credit Card Payments"
+      }
+    ]
+  }

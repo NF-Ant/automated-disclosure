@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Amazon_Basic_Routing_Profile_Id</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Amazon Basic Routing Profile Id</shortDescription>
+        <value>arn:aws:connect:us-east-1:123456789012:instance/12345678-1234-1234-1234-123456789012/routing-profile/12345678-1234-1234-1234-123456789012</value>
+    </labels>
+    <labels>
+        <fullName>Amazon_Admin_Security_Profile_Id</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Amazon Admin Security Profile Id</shortDescription>
+        <value>arn:aws:connect:us-east-1:123456789012:instance/12345678-1234-1234-1234-123456789012/security-profile/12345678-1234-1234-1234-123456789012</value>
+    </labels>
+    <labels>
+        <fullName>Amazon_Instance_Id</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Amazon Instance Id</shortDescription>
+        <value>12345678-1234-1234-1234-123456789012</value>
+    </labels>
+    <labels>
+        <fullName>SCV_AWS_Named_Credentials</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>SCV AWS Named Credentials</shortDescription>
+        <value>AWS_Connect_API</value>
+    </labels>
+    <labels>
+        <fullName>Amazon_CallCenter_InternalName</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Amazon CallCenter Internal Name</shortDescription>
+        <value>Amazon_Connect%</value>
+    </labels>
+</CustomLabels>

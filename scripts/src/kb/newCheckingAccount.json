@@ -1,0 +1,23 @@
+ {
+    "id": "kb-007",
+    "title": "Opening a New Checking Account",
+    "topic": "Account Opening",
+    "category": "New Accounts",
+    "content": "Requirements and process for opening a checking account:\n\n1. Required documents for all applicants:\n   - Government-issued photo ID (driver's license, passport, state ID)\n   - Social Security card or ITIN documentation\n   - Proof of address (utility bill, lease agreement, dated within 60 days)\n\n2. Initial deposit requirements:\n   - Standard checking: $25 minimum\n   - Premium checking: $100 minimum\n   - Student checking: $5 minimum (with valid student ID)\n\n3. ChexSystems verification:\n   - Check for previous banking history and unpaid fees\n   - If declined, provide ChexSystems contact information for dispute process\n\n4. Account features to explain:\n   - Debit card (arrives in 7-10 business days)\n   - Online and mobile banking access\n   - Bill pay services\n   - Direct deposit setup\n   - Overdraft protection options\n\n5. Fee schedule review (monthly maintenance, ATM fees, overdraft fees)\n\nNote: Joint accounts require both applicants to be present with required documentation.",
+    "metadata": {
+      "author": "New Accounts Team",
+      "last_updated": "2025-08-25",
+      "region": "US",
+      "importance": "Medium"
+    },
+    "related_articles": [
+      {
+        "id": "kb-010",
+        "title": "Understanding Overdraft Protection Options"
+      },
+      {
+        "id": "kb-002",
+        "title": "Logging into Your Online Account"
+      }
+    ]
+  }
