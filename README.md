@@ -2,7 +2,13 @@
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [Architecture](#architecture)
+2. Test search directly:
+   ```python
+   response = bedrock_agent_runtime.retrieve(
+       knowledgeBaseId='<YOUR_KB_ID>',
+       retrievalQuery={'text': 'test query'}
+   )
+   ```. [Architecture](#architecture)
 3. [Components](#components)
 4. [Data Flow](#data-flow)
 5. [Setup & Configuration](#setup--configuration)
@@ -50,7 +56,7 @@ graph TB
     
     subgraph AWS["AWS Cloud"]
         subgraph API["API Gateway"]
-            WS[WebSocket API<br/>wss://op0nesemea...]
+            WS[WebSocket API<br/>wss://YOUR-API-ID...]
         end
         
         subgraph Lambda["Lambda Functions"]
@@ -61,12 +67,12 @@ graph TB
         end
         
         subgraph Storage["Storage Layer"]
-            S3[S3 Bucket<br/>barclays-poc-kb-knowledge-articles]
+            S3[S3 Bucket<br/>YOUR-KB-BUCKET]
             DDB[(DynamoDB<br/>Connections & Sessions)]
         end
         
         subgraph Bedrock["Amazon Bedrock"]
-            KB[Knowledge Base<br/>ID: 2YLLDJTK0F]
+            KB[Knowledge Base<br/>ID: YOUR-KB-ID]
             Claude[Claude Models<br/>Sonnet/Opus/Haiku]
             OSS[(OpenSearch Serverless<br/>Vector Store)]
             Embed[Titan Embeddings v2<br/>1024 dimensions]
@@ -273,9 +279,9 @@ wsUrl = 'wss://op0nesemea.execute-api.us-west-2.amazonaws.com/dev';
 
 **Environment Variables**:
 ```python
-TABLE_NAME: websocket-connections-dev
+TABLE_NAME: websocket-connections-<ENVIRONMENT>
 BEDROCK_MODEL_ID: anthropic.claude-3-5-sonnet-20241022-v2:0
-KNOWLEDGE_BASE_ID: 2YLLDJTK0F
+KNOWLEDGE_BASE_ID: <YOUR_KB_ID>
 ```
 
 **RAG Configuration**:
@@ -299,7 +305,7 @@ KNOWLEDGE_BASE_ID: 2YLLDJTK0F
 ### 3. AWS Infrastructure
 
 #### DynamoDB Table
-**Name**: `websocket-connections-dev`
+**Name**: `websocket-connections-<ENVIRONMENT>`
 
 **Schema**:
 ```
@@ -314,11 +320,11 @@ Attributes:
 ```
 
 #### S3 Bucket
-**Name**: `barclays-poc-kb-knowledge-articles`
+**Name**: `<YOUR_ORGANIZATION>-kb-knowledge-articles`
 
 **Structure**:
 ```
-s3://barclays-poc-kb-knowledge-articles/
+s3://<YOUR_ORGANIZATION>-kb-knowledge-articles/
   ├── kb-<ArticleNumber>.json
   ├── kb-<ArticleNumber>.json
   └── ...
@@ -344,12 +350,12 @@ s3://barclays-poc-kb-knowledge-articles/
 ```
 
 #### Bedrock Knowledge Base
-**Name**: `salesforce-knowledge-base`
-**ID**: `2YLLDJTK0F`
+**Name**: `<YOUR_ORGANIZATION>-knowledge-base`
+**ID**: `<YOUR_KB_ID>`
 
 **Configuration**:
 - **Vector Store**: Amazon OpenSearch Serverless
-- **Collection ARN**: `arn:aws:aoss:us-west-2:918888467489:collection/kiepfh7248ge6dzmbz39`
+- **Collection ARN**: `arn:aws:aoss:<REGION>:<ACCOUNT_ID>:collection/<COLLECTION_ID>`
 - **Embeddings Model**: Titan Text Embeddings v2
 - **Embedding Type**: Float vector embeddings
 - **Vector Dimensions**: 1024
@@ -364,7 +370,7 @@ s3://barclays-poc-kb-knowledge-articles/
 
 **Data Source**:
 - Type: S3
-- Bucket: `s3://barclays-poc-kb-knowledge-articles`
+- Bucket: `s3://<YOUR_ORGANIZATION>-kb-knowledge-articles`
 - Status: Available
 - Data Deletion Policy: Delete
 
@@ -462,9 +468,9 @@ aws cloudformation create-stack \
   --stack-name salesforce-knowledge-sync \
   --template-body file://knowledge-sync-template.yaml \
   --parameters \
-    ParameterKey=Environment,ParameterValue=dev \
-    ParameterKey=S3BucketName,ParameterValue=barclays-poc-kb-knowledge-articles \
-    ParameterKey=KnowledgeBaseId,ParameterValue=2YLLDJTK0F \
+    ParameterKey=Environment,ParameterValue=<ENVIRONMENT> \
+    ParameterKey=S3BucketName,ParameterValue=<YOUR_ORGANIZATION>-kb-knowledge-articles \
+    ParameterKey=KnowledgeBaseId,ParameterValue=<YOUR_KB_ID> \
     ParameterKey=DataSourceId,ParameterValue=<YOUR_DATA_SOURCE_ID> \
   --capabilities CAPABILITY_NAMED_IAM
 ```
@@ -472,7 +478,7 @@ aws cloudformation create-stack \
 ### Step 2: Create S3 Bucket
 
 ```bash
-aws s3 mb s3://barclays-poc-kb-knowledge-articles --region us-west-2
+aws s3 mb s3://<YOUR_ORGANIZATION>-kb-knowledge-articles --region <REGION>
 ```
 
 ### Step 3: Create and Configure Bedrock Knowledge Base
@@ -490,35 +496,35 @@ This is a critical step - the Knowledge Base must be created before deploying th
 
 2. **Verify S3 Bucket Exists**:
 ```bash
-aws s3 ls s3://barclays-poc-kb-knowledge-articles/
+aws s3 ls s3://<YOUR_ORGANIZATION>-kb-knowledge-articles/
 # If bucket doesn't exist, create it:
-aws s3 mb s3://barclays-poc-kb-knowledge-articles --region us-west-2
+aws s3 mb s3://<YOUR_ORGANIZATION>-kb-knowledge-articles --region <REGION>
 ```
 
 #### Create Knowledge Base (Step-by-Step)
 
 **Step 3.1: Navigate to Bedrock Console**
 1. Go to AWS Console → Amazon Bedrock
-2. Select your region (e.g., `us-west-2`)
+2. Select your region (e.g., `us-west-2` or your preferred region)
 3. In left navigation, click **"Knowledge bases"**
 4. Click **"Create knowledge base"** button
 
 **Step 3.2: Provide Knowledge Base Details**
-1. **Knowledge base name**: `salesforce-knowledge-base`
+1. **Knowledge base name**: `<YOUR_ORGANIZATION>-knowledge-base`
 2. **Description**: `Knowledge Base for Salesforce AI Chat with RAG capabilities`
 3. **IAM permissions**:
    - Select: **"Create and use a new service role"**
    - Role name will auto-generate: `AmazonBedrockExecutionRoleForKnowledgeBase_xxxxx`
    - **Important**: Note this role name for later
 4. **Tags** (optional):
-   - Key: `Environment`, Value: `dev`
+   - Key: `Environment`, Value: `<ENVIRONMENT>`
    - Key: `Application`, Value: `salesforce-ai-chat`
 5. Click **"Next"**
 
 **Step 3.3: Set Up Data Source**
-1. **Data source name**: `salesforce-knowledge-base-s3`
-2. **S3 URI**: Browse and select `s3://barclays-poc-kb-knowledge-articles/`
-   - Or manually enter: `s3://barclays-poc-kb-knowledge-articles`
+1. **Data source name**: `<YOUR_ORGANIZATION>-knowledge-base-s3`
+2. **S3 URI**: Browse and select `s3://<YOUR_ORGANIZATION>-kb-knowledge-articles/`
+   - Or manually enter: `s3://<YOUR_ORGANIZATION>-kb-knowledge-articles`
 3. **Chunking strategy**:
    - Select: **"Default chunking"**
    - Max tokens: 300
@@ -557,7 +563,7 @@ aws s3 mb s3://barclays-poc-kb-knowledge-articles --region us-west-2
 2. Click **"Create knowledge base"**
 3. Wait for creation (typically 2-5 minutes)
 4. **CRITICAL**: Once created, copy the following:
-   - **Knowledge Base ID** (e.g., `2YLLDJTK0F`)
+   - **Knowledge Base ID** (e.g., `ABCD1234XY`)
    - **Collection ARN** (visible in Vector store section)
    - **Data Source ID** (visible in Data sources tab)
 
@@ -568,14 +574,14 @@ After creation, retrieve the Data Source ID:
 # List data sources for your KB
 aws bedrock-agent list-data-sources \
   --knowledge-base-id <YOUR_KB_ID> \
-  --region us-west-2
+  --region <REGION>
 
 # Output will show:
 # {
 #   "dataSourceSummaries": [
 #     {
 #       "dataSourceId": "ABCDEF123456",
-#       "name": "salesforce-knowledge-base-s3",
+#       "name": "<YOUR_ORGANIZATION>-knowledge-base-s3",
 #       "status": "AVAILABLE"
 #     }
 #   ]
@@ -607,19 +613,19 @@ cat > /tmp/test-article.json <<EOF
 EOF
 
 # Upload to S3
-aws s3 cp /tmp/test-article.json s3://barclays-poc-kb-knowledge-articles/
+aws s3 cp /tmp/test-article.json s3://<YOUR_ORGANIZATION>-kb-knowledge-articles/
 
 # Trigger sync
 aws bedrock-agent start-ingestion-job \
   --knowledge-base-id <YOUR_KB_ID> \
   --data-source-id <YOUR_DATA_SOURCE_ID> \
-  --region us-west-2
+  --region <REGION>
 
 # Check sync status
 aws bedrock-agent list-ingestion-jobs \
   --knowledge-base-id <YOUR_KB_ID> \
   --data-source-id <YOUR_DATA_SOURCE_ID> \
-  --region us-west-2
+  --region <REGION>
 ```
 
 Wait for ingestion status to show `COMPLETE` (usually 1-2 minutes for small files).
@@ -647,7 +653,7 @@ EOF
 # Test query
 aws bedrock-agent-runtime retrieve-and-generate \
   --cli-input-json file:///tmp/kb-test.json \
-  --region us-west-2
+  --region <REGION>
 ```
 
 If successful, you'll see a response with the AI's answer based on your test article.
@@ -661,8 +667,8 @@ aws cloudformation create-stack \
   --stack-name salesforce-knowledge-sync \
   --template-body file://knowledge-sync-template.yaml \
   --parameters \
-    ParameterKey=Environment,ParameterValue=dev \
-    ParameterKey=S3BucketName,ParameterValue=barclays-poc-kb-knowledge-articles \
+    ParameterKey=Environment,ParameterValue=<ENVIRONMENT> \
+    ParameterKey=S3BucketName,ParameterValue=<YOUR_ORGANIZATION>-kb-knowledge-articles \
     ParameterKey=KnowledgeBaseId,ParameterValue=<YOUR_KB_ID> \
     ParameterKey=DataSourceId,ParameterValue=<YOUR_DATA_SOURCE_ID> \
   --capabilities CAPABILITY_NAMED_IAM
@@ -672,13 +678,13 @@ aws cloudformation create-stack \
 Update the Lambda environment variable after stack creation:
 ```bash
 aws lambda update-function-configuration \
-  --function-name websocket-bedrock-chat-dev \
+  --function-name websocket-bedrock-chat-<ENVIRONMENT> \
   --environment Variables="{
-    TABLE_NAME=websocket-connections-dev,
+    TABLE_NAME=websocket-connections-<ENVIRONMENT>,
     BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0,
     KNOWLEDGE_BASE_ID=<YOUR_KB_ID>
   }" \
-  --region us-west-2
+  --region <REGION>
 ```
 
 ### Step 4: Update Lambda Environment Variables
@@ -686,12 +692,13 @@ aws lambda update-function-configuration \
 ```bash
 # Update Chat Lambda with KB ID
 aws lambda update-function-configuration \
-  --function-name websocket-bedrock-chat-dev \
+  --function-name websocket-bedrock-chat-<ENVIRONMENT> \
   --environment Variables="{
-    TABLE_NAME=websocket-connections-dev,
+    TABLE_NAME=websocket-connections-<ENVIRONMENT>,
     BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0,
-    KNOWLEDGE_BASE_ID=2YLLDJTK0F
-  }"
+    KNOWLEDGE_BASE_ID=<YOUR_KB_ID>
+  }" \
+  --region <REGION>
 ```
 
 ### Step 5: Configure Salesforce
@@ -735,7 +742,7 @@ Setup → Remote Site Settings → New
 1. Setup → Security → CSP Trusted Sites → New Trusted Site
 2. **Settings**:
    - **Trusted Site Name**: `AWS_WebSocket`
-   - **Trusted Site URL**: `https://op0nesemea.execute-api.us-west-2.amazonaws.com`
+   - **Trusted Site URL**: `https://<YOUR_API_GATEWAY_ID>.execute-api.<REGION>.amazonaws.com`
    - **Description**: WebSocket connection for AI Chat
    - **Active**: ✅ Checked
 
@@ -762,7 +769,7 @@ Setup → Remote Site Settings → New
 **Verification**:
 ```javascript
 // Test in Browser Console (from Salesforce page)
-const ws = new WebSocket('wss://op0nesemea.execute-api.us-west-2.amazonaws.com/dev');
+const ws = new WebSocket('wss://<YOUR_API_GATEWAY_ID>.execute-api.<REGION>.amazonaws.com/<STAGE>');
 ws.onopen = () => console.log('Connected!');
 ws.onerror = (e) => console.error('Connection failed:', e);
 ```
@@ -832,7 +839,7 @@ KnowledgeToS3Handler.processArticles(articles);
    - Setup → Security → CSP Trusted Sites
    - Ensure `AWS_WebSocket` exists and is Active
    - Verify `connect-src` directive is enabled
-   - URL should be: `https://op0nesemea.execute-api.us-west-2.amazonaws.com`
+   - URL should be: `https://<YOUR_API_GATEWAY_ID>.execute-api.<REGION>.amazonaws.com`
    
 2. **Check Browser Console** for CSP errors:
    ```
@@ -845,7 +852,7 @@ KnowledgeToS3Handler.processArticles(articles);
 4. Check API Gateway stage is deployed
 5. Review Lambda logs:
    ```bash
-   aws logs tail /aws/lambda/websocket-connect-dev --follow
+   aws logs tail /aws/lambda/websocket-connect-<ENVIRONMENT> --follow --region <REGION>
    ```
 6. Check CORS settings in API Gateway
 
@@ -856,11 +863,11 @@ KnowledgeToS3Handler.processArticles(articles);
 **Checks**:
 1. Check Lambda logs:
    ```bash
-   aws logs tail /aws/lambda/websocket-bedrock-chat-dev --follow
+   aws logs tail /aws/lambda/websocket-bedrock-chat-<ENVIRONMENT> --follow --region <REGION>
    ```
 2. Verify Bedrock model access:
    ```bash
-   aws bedrock list-foundation-models --region us-west-2
+   aws bedrock list-foundation-models --region <REGION>
    ```
 3. Check IAM permissions for Lambda role
 4. Verify Knowledge Base ID is correct
@@ -872,11 +879,11 @@ KnowledgeToS3Handler.processArticles(articles);
 **Checks**:
 1. Check S3 bucket for article files:
    ```bash
-   aws s3 ls s3://barclays-poc-kb-knowledge-articles/
+   aws s3 ls s3://<YOUR_ORGANIZATION>-kb-knowledge-articles/
    ```
 2. Review Lambda Function logs:
    ```bash
-   aws logs tail /aws/lambda/sf-knowledge-s3-sync-dev --follow
+   aws logs tail /aws/lambda/sf-knowledge-s3-sync-<ENVIRONMENT> --follow --region <REGION>
    ```
 3. Check Named Credential configuration in Salesforce
 4. Test Lambda Function URL directly:
@@ -888,8 +895,9 @@ KnowledgeToS3Handler.processArticles(articles);
 5. Check Knowledge Base ingestion jobs:
    ```bash
    aws bedrock-agent list-ingestion-jobs \
-     --knowledge-base-id 2YLLDJTK0F \
-     --data-source-id <DATA_SOURCE_ID>
+     --knowledge-base-id <YOUR_KB_ID> \
+     --data-source-id <YOUR_DATA_SOURCE_ID> \
+     --region <REGION>
    ```
 
 ### Session Not Persisting
@@ -912,12 +920,10 @@ KnowledgeToS3Handler.processArticles(articles);
 2. Test search directly:
    ```python
    response = bedrock_agent_runtime.retrieve(
-       knowledgeBaseId='2YLLDJTK0F',
+       knowledgeBaseId='<YOUR_KB_ID>',
        retrievalQuery={'text': 'test query'}
    )
    ```
 3. Check article content quality (too short may not embed well)
 4. Verify numberOfResults in Lambda (currently set to 3)
-
----
 
