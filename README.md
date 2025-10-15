@@ -105,6 +105,7 @@ sequenceDiagram
     participant LWC as Salesforce LWC
     participant WS as WebSocket API
     participant Connect as Connect Lambda
+    participant Disconnect as Disconnect Lambda
     participant Chat as Chat Lambda
     participant DDB as DynamoDB
     participant KB as Knowledge Base
@@ -113,7 +114,8 @@ sequenceDiagram
     User->>LWC: Opens Chat Interface
     LWC->>WS: Connect Request
     WS->>Connect: $connect event
-    Connect->>DDB: Store connectionId + TTL
+    Connect->>DDB: Store connectionId + TTL (2 hours)
+    DDB-->>Connect: Confirmation
     Connect-->>WS: 200 OK
     WS-->>LWC: Connection Established
     LWC-->>User: Shows "Connected" status
@@ -121,19 +123,24 @@ sequenceDiagram
     User->>LWC: Types message
     LWC->>WS: Send message via WebSocket
     WS->>Chat: $default route
-    Chat->>DDB: Get/Store session ID
+    Chat->>DDB: Get bedrockSessionId
+    DDB-->>Chat: Return session (or null)
     Chat->>KB: retrieve_and_generate(message, sessionId)
     KB->>Claude: Generate with context
     Claude-->>KB: Response
     KB-->>Chat: Answer + Sources + SessionId
-    Chat->>DDB: Update session ID
+    Chat->>DDB: Update bedrockSessionId
+    DDB-->>Chat: Confirmation
     Chat->>WS: Send response
     WS->>LWC: Deliver message
     LWC-->>User: Display AI response
     
     User->>LWC: Closes chat/navigates away
-    LWC->>WS: Disconnect
-    WS->>DDB: Delete connectionId
+    LWC->>WS: Disconnect Request
+    WS->>Disconnect: $disconnect event
+    Disconnect->>DDB: Delete connectionId
+    DDB-->>Disconnect: Confirmation
+    Disconnect-->>WS: 200 OK
 ```
 
 ### Knowledge Article Sync Flow
@@ -468,39 +475,209 @@ aws cloudformation create-stack \
 aws s3 mb s3://barclays-poc-kb-knowledge-articles --region us-west-2
 ```
 
-### Step 3: Configure Bedrock Knowledge Base
+### Step 3: Create and Configure Bedrock Knowledge Base
 
-#### Create Knowledge Base
-1. Navigate to Amazon Bedrock Console → Knowledge Bases
-2. Click "Create Knowledge Base"
-3. **Settings**:
-   - Name: `salesforce-knowledge-base`
-   - IAM Role: Create new role (AmazonBedrockExecutionRoleForKnowledgeBase)
+This is a critical step - the Knowledge Base must be created before deploying the Lambda functions.
 
-#### Configure Data Source
-4. **Data Source**:
-   - Type: S3
-   - Bucket: `s3://barclays-poc-kb-knowledge-articles`
-   - Chunking: Default
-   - Parsing: Default
+#### Prerequisites
+1. **Enable Bedrock Model Access**:
+   - Navigate to Amazon Bedrock Console
+   - Click "Model access" in left navigation
+   - Request access to:
+     - Claude 3.5 Sonnet (or your chosen model)
+     - Titan Text Embeddings v2
+   - Wait for approval (usually instant for supported regions)
 
-#### Configure Embeddings & Vector Store
-5. **Embeddings**:
-   - Model: Titan Text Embeddings v2
-   - Dimensions: 1024
+2. **Verify S3 Bucket Exists**:
+```bash
+aws s3 ls s3://barclays-poc-kb-knowledge-articles/
+# If bucket doesn't exist, create it:
+aws s3 mb s3://barclays-poc-kb-knowledge-articles --region us-west-2
+```
+
+#### Create Knowledge Base (Step-by-Step)
+
+**Step 3.1: Navigate to Bedrock Console**
+1. Go to AWS Console → Amazon Bedrock
+2. Select your region (e.g., `us-west-2`)
+3. In left navigation, click **"Knowledge bases"**
+4. Click **"Create knowledge base"** button
+
+**Step 3.2: Provide Knowledge Base Details**
+1. **Knowledge base name**: `salesforce-knowledge-base`
+2. **Description**: `Knowledge Base for Salesforce AI Chat with RAG capabilities`
+3. **IAM permissions**:
+   - Select: **"Create and use a new service role"**
+   - Role name will auto-generate: `AmazonBedrockExecutionRoleForKnowledgeBase_xxxxx`
+   - **Important**: Note this role name for later
+4. **Tags** (optional):
+   - Key: `Environment`, Value: `dev`
+   - Key: `Application`, Value: `salesforce-ai-chat`
+5. Click **"Next"**
+
+**Step 3.3: Set Up Data Source**
+1. **Data source name**: `salesforce-knowledge-base-s3`
+2. **S3 URI**: Browse and select `s3://barclays-poc-kb-knowledge-articles/`
+   - Or manually enter: `s3://barclays-poc-kb-knowledge-articles`
+3. **Chunking strategy**:
+   - Select: **"Default chunking"**
+   - Max tokens: 300
+   - Overlap percentage: 20%
+   - (These defaults work well for knowledge articles)
+4. **Metadata and filtering** (optional): Leave default
+5. Click **"Next"**
+
+**Step 3.4: Select Embeddings Model**
+1. **Embeddings model**: Select **"Titan Text Embeddings v2"**
+2. **Model configuration**:
+   - Dimensions: **1024** (recommended)
+   - Normalize: Yes (default)
+
+**Step 3.5: Configure Vector Store**
+1. **Vector database**: Select **"Quick create a new vector store"**
+   - This creates an OpenSearch Serverless collection automatically
+   - Collection name: Auto-generated (e.g., `bedrock-knowledge-base-xxxxx`)
    
-6. **Vector Store**:
-   - Type: Amazon OpenSearch Serverless
-   - Create new collection or select existing
-   - Note the Collection ARN
+   **OR** if you want to use existing OpenSearch:
+   - Select **"Choose a vector store you have created"**
+   - Choose existing OpenSearch Serverless collection
+   - Provide index name and field mappings
 
-7. Click "Create Knowledge Base"
-8. **Important**: Copy the Knowledge Base ID (e.g., `2YLLDJTK0F`)
+2. For **Quick create**, the following are configured automatically:
+   - Collection ARN: (auto-generated)
+   - Vector index name: `bedrock-knowledge-base-default-index`
+   - Vector field name: `bedrock-knowledge-base-default-vector`
+   - Text field name: `AMAZON_BEDROCK_TEXT`
+   - Metadata field name: `AMAZON_BEDROCK_METADATA`
+
+3. Click **"Next"**
+
+**Step 3.6: Review and Create**
+1. Review all settings
+2. Click **"Create knowledge base"**
+3. Wait for creation (typically 2-5 minutes)
+4. **CRITICAL**: Once created, copy the following:
+   - **Knowledge Base ID** (e.g., `2YLLDJTK0F`)
+   - **Collection ARN** (visible in Vector store section)
+   - **Data Source ID** (visible in Data sources tab)
 
 #### Get Data Source ID
+After creation, retrieve the Data Source ID:
+
 ```bash
+# List data sources for your KB
 aws bedrock-agent list-data-sources \
-  --knowledge-base-id 2YLLDJTK0F \
+  --knowledge-base-id <YOUR_KB_ID> \
+  --region us-west-2
+
+# Output will show:
+# {
+#   "dataSourceSummaries": [
+#     {
+#       "dataSourceId": "ABCDEF123456",
+#       "name": "salesforce-knowledge-base-s3",
+#       "status": "AVAILABLE"
+#     }
+#   ]
+# }
+```
+
+Copy the `dataSourceId` - you'll need this for CloudFormation deployment.
+
+#### Initial Data Sync (Optional Test)
+Before integrating with Lambda, test the KB with sample data:
+
+```bash
+# Create a test article
+cat > /tmp/test-article.json <<EOF
+{
+  "id": "kb-test-001",
+  "title": "Test Knowledge Article",
+  "topic": "Testing",
+  "category": "Support",
+  "content": "This is a test article to verify the knowledge base is working correctly. The AI should be able to retrieve and reference this content.",
+  "metadata": {
+    "author": "System Admin",
+    "last_updated": "2025-10-15",
+    "region": "US",
+    "importance": "High",
+    "source": "Test"
+  }
+}
+EOF
+
+# Upload to S3
+aws s3 cp /tmp/test-article.json s3://barclays-poc-kb-knowledge-articles/
+
+# Trigger sync
+aws bedrock-agent start-ingestion-job \
+  --knowledge-base-id <YOUR_KB_ID> \
+  --data-source-id <YOUR_DATA_SOURCE_ID> \
+  --region us-west-2
+
+# Check sync status
+aws bedrock-agent list-ingestion-jobs \
+  --knowledge-base-id <YOUR_KB_ID> \
+  --data-source-id <YOUR_DATA_SOURCE_ID> \
+  --region us-west-2
+```
+
+Wait for ingestion status to show `COMPLETE` (usually 1-2 minutes for small files).
+
+#### Test Knowledge Base Query
+Verify the KB is working:
+
+```bash
+# Create test query config
+cat > /tmp/kb-test.json <<EOF
+{
+  "input": {
+    "text": "Tell me about the test article"
+  },
+  "retrieveAndGenerateConfiguration": {
+    "type": "KNOWLEDGE_BASE",
+    "knowledgeBaseConfiguration": {
+      "knowledgeBaseId": "<YOUR_KB_ID>",
+      "modelArn": "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0"
+    }
+  }
+}
+EOF
+
+# Test query
+aws bedrock-agent-runtime retrieve-and-generate \
+  --cli-input-json file:///tmp/kb-test.json \
+  --region us-west-2
+```
+
+If successful, you'll see a response with the AI's answer based on your test article.
+
+#### Update CloudFormation Parameters
+Now that you have your Knowledge Base created, update the parameters:
+
+**For Knowledge Sync Lambda Stack**:
+```bash
+aws cloudformation create-stack \
+  --stack-name salesforce-knowledge-sync \
+  --template-body file://knowledge-sync-template.yaml \
+  --parameters \
+    ParameterKey=Environment,ParameterValue=dev \
+    ParameterKey=S3BucketName,ParameterValue=barclays-poc-kb-knowledge-articles \
+    ParameterKey=KnowledgeBaseId,ParameterValue=<YOUR_KB_ID> \
+    ParameterKey=DataSourceId,ParameterValue=<YOUR_DATA_SOURCE_ID> \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+**For WebSocket Chat Stack**:
+Update the Lambda environment variable after stack creation:
+```bash
+aws lambda update-function-configuration \
+  --function-name websocket-bedrock-chat-dev \
+  --environment Variables="{
+    TABLE_NAME=websocket-connections-dev,
+    BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0,
+    KNOWLEDGE_BASE_ID=<YOUR_KB_ID>
+  }" \
   --region us-west-2
 ```
 
@@ -627,60 +804,6 @@ KnowledgeToS3Handler.processArticles(articles);
 **Official Salesforce Statement**:
 > "Actions that change the publication status of a KAV record, such as Publish and Archive, do not fire Apex or flow triggers. However, sometimes publishing an article from the UI causes the article to be saved, and in these instances the before update and after update triggers are called."
 
-**Current Workarounds**:
-
-#### Option A: Manual Sync (Current Implementation)
-```apex
-// Run manually after publishing articles
-Set<Id> masterArticleIds = new Set<Id>{/* article IDs */};
-System.enqueueJob(new KnowledgeToS3Queueable(masterArticleIds));
-```
-
-#### Option B: Scheduled Batch Job
-Create a scheduled batch job that runs periodically:
-```apex
-public class KnowledgeSyncSchedulable implements Schedulable {
-    public void execute(SchedulableContext sc) {
-        // Query recently updated articles
-        List<Knowledge__kav> articles = [
-            SELECT Id, ArticleNumber, KnowledgeArticleId
-            FROM Knowledge__kav
-            WHERE LastModifiedDate = LAST_N_DAYS:1
-            AND PublishStatus = 'Online'
-            AND IsLatestVersion = true
-        ];
-        
-        if (!articles.isEmpty()) {
-            Set<Id> articleIds = new Set<Id>();
-            for (Knowledge__kav article : articles) {
-                articleIds.add(article.KnowledgeArticleId);
-            }
-            System.enqueueJob(new KnowledgeToS3Queueable(articleIds));
-        }
-    }
-}
-
-// Schedule to run every hour
-System.schedule('Knowledge Sync Hourly', '0 0 * * * ?', new KnowledgeSyncSchedulable());
-```
-
-#### Option C: Platform Events (Recommended for Production)
-1. Create Platform Event: `Knowledge_Article_Change__e`
-2. Use Flow to publish event on article changes
-3. Subscribe with Apex Trigger on event
-4. Trigger processes the sync
-
-```apex
-trigger KnowledgeEventTrigger on Knowledge_Article_Change__e (after insert) {
-    Set<Id> articleIds = new Set<Id>();
-    for (Knowledge_Article_Change__e event : Trigger.new) {
-        articleIds.add(event.ArticleId__c);
-    }
-    if (!articleIds.isEmpty()) {
-        System.enqueueJob(new KnowledgeToS3Queueable(articleIds));
-    }
-}
-```
 
 ### 2. WebSocket Connection Timeouts
 
