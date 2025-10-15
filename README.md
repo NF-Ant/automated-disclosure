@@ -40,7 +40,7 @@ This application provides an AI-powered chat interface embedded in Salesforce th
 ### High-Level Architecture
 
 ```mermaid
-ggraph TB
+graph TB
     subgraph Salesforce["Salesforce Environment"]
         UI[Lightning Web Component<br/>Chat Interface]
         KA[Knowledge Articles]
