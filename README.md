@@ -40,7 +40,7 @@ This application provides an AI-powered chat interface embedded in Salesforce th
 ### High-Level Architecture
 
 ```mermaid
-graph TB
+ggraph TB
     subgraph Salesforce["Salesforce Environment"]
         UI[Lightning Web Component<br/>Chat Interface]
         KA[Knowledge Articles]
@@ -78,6 +78,8 @@ graph TB
     WS --> Disconnect
     WS --> Chat
     
+    Connect --> DDB
+    Disconnect --> DDB
     Chat --> DDB
     Chat -->|Retrieve & Generate| KB
     KB --> OSS
