@@ -207,7 +207,7 @@ sequenceDiagram
 
 **Configuration**:
 ```javascript
-wsUrl = 'wss://op0nesemea.execute-api.us-west-2.amazonaws.com/dev';
+wsUrl = 'wss://<YOUR_API_ID>.execute-api.us-west-2.amazonaws.com/dev';
 ```
 
 **Available in**:
