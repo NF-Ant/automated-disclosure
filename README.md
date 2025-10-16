@@ -929,8 +929,6 @@ KnowledgeToS3Handler.processArticles(articles);
 
 # FlowTransfer LWC Component
 
-![Flow Transfer Process](https://placeholder-for-your-diagram-url.png)
-
 ## Overview
 
 The FlowTransfer component is a Lightning Web Component (LWC) designed to facilitate automated call transfers in Salesforce Service Cloud Voice with Amazon Connect. It handles the complete transfer lifecycle, including initiating transfers, managing disclosure messages, and automatically resuming customer connections after required disclosures.
@@ -1191,6 +1189,3 @@ sequenceDiagram
 - Transfer destination ARNs should be properly secured and validated
 - Consider implementing additional error handling for production deployments
 
-## License
-
-[Specify your license information here]
