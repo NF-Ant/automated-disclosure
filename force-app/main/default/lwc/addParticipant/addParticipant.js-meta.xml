@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>54.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__FlowScreen</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__FlowScreen">
+            <property name="recordId" type="String" label="Record ID"/>
+            <property name="autoExecute" type="Boolean" label="Auto Execute Transfer"/>
+            <property name="transferDestination" type="String" label="Transfer Destination ARN"/>
+            <property name="transferSuccess" type="Boolean" label="Transfer Success (Output)"/>
+            <property name="transferMessage" type="String" label="Transfer Message (Output)"/>
+            <property name="transferComplete" type="Boolean" label="Transfer Complete (Output)"/>
+        </targetConfig>
+    </targetConfigs>
+    <capabilities>
+        <capability>lightning__ServiceCloudVoiceToolkitApi</capability>
+    </capabilities>
+</LightningComponentBundle>
