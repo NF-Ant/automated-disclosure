@@ -1,0 +1,76 @@
+{
+  "Version": "2019-10-30",
+  "StartAction": "c9be6fec-e5fe-421d-a651-d20eca72b658",
+  "Metadata": {
+    "entryPointPosition": {
+      "x": 17.6,
+      "y": 84
+    },
+    "ActionMetadata": {
+      "c9be6fec-e5fe-421d-a651-d20eca72b658": {
+        "position": {
+          "x": 238.4,
+          "y": 85.6
+        }
+      },
+      "ac9e102f-1a96-4fd7-ade0-ba2645a617fb": {
+        "position": {
+          "x": 498.4,
+          "y": 172
+        }
+      },
+      "55903e00-4596-41a6-8054-b5fe3c8e8c74": {
+        "position": {
+          "x": 994.4,
+          "y": 258.4
+        }
+      }
+    },
+    "Annotations": [],
+    "name": "automated Disclosure",
+    "description": "",
+    "type": "queueTransfer",
+    "status": "PUBLISHED",
+    "hash": {}
+  },
+  "Actions": [
+    {
+      "Parameters": {
+        "PreviousContactParticipantState": "AgentOnHold"
+      },
+      "Identifier": "c9be6fec-e5fe-421d-a651-d20eca72b658",
+      "Type": "UpdatePreviousContactParticipantState",
+      "Transitions": {
+        "NextAction": "ac9e102f-1a96-4fd7-ade0-ba2645a617fb",
+        "Errors": [
+          {
+            "NextAction": "ac9e102f-1a96-4fd7-ade0-ba2645a617fb",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {
+        "Text": "Thank you for calling [Company Name]. Please be advised that this conversation may be recorded and monitored for regulatory compliance."
+      },
+      "Identifier": "ac9e102f-1a96-4fd7-ade0-ba2645a617fb",
+      "Type": "MessageParticipant",
+      "Transitions": {
+        "NextAction": "55903e00-4596-41a6-8054-b5fe3c8e8c74",
+        "Errors": [
+          {
+            "NextAction": "55903e00-4596-41a6-8054-b5fe3c8e8c74",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {},
+      "Identifier": "55903e00-4596-41a6-8054-b5fe3c8e8c74",
+      "Type": "DisconnectParticipant",
+      "Transitions": {}
+    }
+  ]
+}
