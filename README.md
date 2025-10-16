@@ -927,3 +927,270 @@ KnowledgeToS3Handler.processArticles(articles);
 3. Check article content quality (too short may not embed well)
 4. Verify numberOfResults in Lambda (currently set to 3)
 
+# FlowTransfer LWC Component
+
+![Flow Transfer Process](https://placeholder-for-your-diagram-url.png)
+
+## Overview
+
+The FlowTransfer component is a Lightning Web Component (LWC) designed to facilitate automated call transfers in Salesforce Service Cloud Voice with Amazon Connect. It handles the complete transfer lifecycle, including initiating transfers, managing disclosure messages, and automatically resuming customer connections after required disclosures.
+
+## Key Features
+
+- **Automated Call Transfers**: Initiate transfers to Amazon Connect queues or agents directly from Salesforce flows
+- **Disclosure Message Support**: Handles the required regulatory disclosure message flow before completing transfers
+- **Event-Driven Architecture**: Uses Amazon Connect telephony events to manage the transfer lifecycle
+- **Flow Integration**: Can be triggered automatically within Salesforce flows or manually by agents
+- **Status Tracking**: Provides real-time status updates and output variables for flow branching logic
+
+## Technical Components
+
+### LWC Component Files
+
+- **flowTransfer.js**: Core JavaScript functionality for call transfer operations
+- **flowTransfer.html**: UI elements for displaying transfer status and manual controls
+- **flowTransfer.css**: Styling for the component
+- **flowTransfer.js-meta.xml**: Configuration metadata for Flow integration
+
+### Amazon Connect Flow
+
+The associated Amazon Connect flow provides the required disclosure message functionality:
+
+1. Puts the previous agent on hold
+2. Plays the regulatory compliance message
+3. Disconnects from the disclosure flow to continue with the transfer
+
+```mermaid
+flowchart LR
+    subgraph "Amazon Connect Disclosure Flow"
+        Start(["Start"]) --> Hold["Put Agent on Hold"]
+        Hold --> Disclosure["Play Disclosure Message"]
+        Disclosure --> Disconnect["Disconnect Participant"]
+        Disconnect --> End(["End"])
+    end
+```
+
+### System Architecture
+
+```mermaid
+flowchart TB
+    subgraph "Salesforce Service Cloud"
+        Flow["Salesforce Flow"]
+        LWC["FlowTransfer LWC"]
+        VoiceAPI["Service Cloud Voice Toolkit API"]
+    end
+    
+    subgraph "Amazon Connect"
+        ACInstance["Amazon Connect Instance"]
+        ACFlow["Disclosure Flow"]
+        Queue["Transfer Destination\n(Queue/Agent)"]
+    end
+    
+    Agent["Agent"]
+    Customer["Customer"]
+    
+    Flow -->|"Invokes\n(autoExecute or manual)"| LWC
+    LWC -->|"Subscribes to events"| VoiceAPI
+    LWC -->|"addParticipant()"| VoiceAPI
+    VoiceAPI -->|"Transfer request"| ACInstance
+    ACInstance -->|"Routes to"| ACFlow
+    ACFlow -->|"Plays disclosure"| Customer
+    ACFlow -->|"Completes"| ACInstance
+    ACInstance -->|"Transfer to"| Queue
+    Queue -->|"Handles"| Customer
+    
+    LWC -->|"Output variables"| Flow
+    Agent -->|"Initiates transfer\n(if manual)"| LWC
+```
+
+## How It Works
+
+1. **Initialization**: The component initializes and connects to the Service Cloud Voice Toolkit API
+2. **Transfer Initiation**: When triggered (automatically or manually), initiates a non-blind transfer to the specified destination
+3. **Disclosure Phase**:
+   - Detects when the Amazon Connect disclosure flow is connected ("participantadded" event)
+   - Monitors for completion of the disclosure message ("participantremoved" event)
+4. **Customer Reconnection**: Automatically resumes the customer connection after the disclosure completes
+5. **Completion**: Signals transfer success back to the Salesforce Flow with status outputs
+
+### Component State Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Initializing
+    
+    Initializing --> Ready: Voice toolkit connected
+    Initializing --> Error: Toolkit not available
+    
+    Ready --> TransferInitiated: executeTransfer() called
+    
+    TransferInitiated --> DisclosureStarted: participantadded event
+    TransferInitiated --> Error: Transfer failed
+    
+    DisclosureStarted --> DisclosureComplete: participantremoved event (disclosure)
+    
+    DisclosureComplete --> CustomerResumed: resume("Initial_Caller") success
+    DisclosureComplete --> Error: Resume failed
+    
+    CustomerResumed --> TransferComplete: participantremoved event (agent)
+    
+    TransferComplete --> [*]
+    Error --> [*]
+```
+
+## Input Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| recordId | String | The Salesforce record ID associated with the call |
+| autoExecute | Boolean | When true, automatically executes the transfer without manual intervention |
+| transferDestination | String | Amazon Connect ARN of the transfer destination (queue or agent) |
+
+## Output Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| transferSuccess | Boolean | Indicates if the transfer was successfully initiated |
+| transferMessage | String | Detailed message about the transfer status |
+| transferComplete | Boolean | Indicates if the entire transfer process has completed |
+
+## Setup Instructions
+
+### Prerequisites
+
+- Salesforce Service Cloud Voice configured with Amazon Connect
+- Voice Toolkit API permissions enabled for your org
+- Amazon Connect instance with the disclosure flow deployed
+
+### Deployment Steps
+
+1. **Deploy the LWC Component**:
+   - Deploy all component files to your Salesforce org
+   - Ensure the proper permissions are set
+
+2. **Configure Amazon Connect Flow**:
+   - Import the provided JSON flow definition into your Amazon Connect instance
+   - Update the disclosure message text as needed for your compliance requirements
+
+3. **Create a Salesforce Flow**:
+   - Add the FlowTransfer component to a Screen element in your flow
+   - Configure the input parameters, especially the transferDestination ARN
+   - Add decision elements based on the output parameters to handle success/failure paths
+
+## Usage Examples
+
+### Automatic Transfer in a Flow
+
+Configure the component with `autoExecute` set to true in a Salesforce Flow to automatically transfer the call when the screen is displayed:
+
+```
+Input Parameters:
+- recordId: {!recordId}
+- autoExecute: true
+- transferDestination: "arn:aws:connect:us-west-2:117301763745:instance/3b0dc5e2-768d-420e-87de-a9216062a0b0/transfer-destination/1d3de879-82c0-46ff-8b2f-110a53969a95"
+
+Output Parameters:
+- transferSuccess: {!transferSuccess}
+- transferMessage: {!transferMessage}
+- transferComplete: {!transferComplete}
+```
+
+### Manual Agent-Initiated Transfer
+
+Configure the component with `autoExecute` set to false to allow agents to manually trigger the transfer when needed:
+
+```
+Input Parameters:
+- recordId: {!recordId}
+- autoExecute: false
+- transferDestination: "arn:aws:connect:us-west-2:117301763745:instance/3b0dc5e2-768d-420e-87de-a9216062a0b0/transfer-destination/1d3de879-82c0-46ff-8b2f-110a53969a95"
+
+Output Parameters:
+- transferSuccess: {!transferSuccess}
+- transferMessage: {!transferMessage}
+- transferComplete: {!transferComplete}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+- **Voice Toolkit Not Available**: Ensure the Service Cloud Voice Toolkit API is properly enabled in your org
+- **Transfer Fails to Initiate**: Verify the transferDestination ARN is correct and accessible
+- **Disclosure Flow Issues**: Check that the Amazon Connect flow is properly deployed and configured
+- **Customer Not Resumed**: If the customer is not automatically reconnected, use the manual resume button
+
+### Debugging
+
+The component includes extensive console logging. Check your browser's developer console for messages prefixed with 'FlowTransfer' to trace the execution flow and diagnose issues.
+
+## Event Handling
+
+The component listens for the following Service Cloud Voice events:
+
+- **callstarted**: Tracks when calls begin
+- **callconnected**: Tracks when calls connect
+- **callended**: Tracks when calls end
+- **participantadded**: Detects when the disclosure flow joins
+- **participantremoved**: Detects when the disclosure flow completes
+- **messageended**: Tracks message completion
+- **disclosureended**: Tracks disclosure completion
+- **playbackended**: Tracks audio playback completion
+
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant LWC as FlowTransfer LWC
+    participant VoiceAPI as Voice Toolkit API
+    participant ACFlow as Amazon Connect Flow
+    participant Queue as Transfer Destination
+    participant Customer
+    
+    Agent->>LWC: Execute Transfer
+    activate LWC
+    
+    LWC->>VoiceAPI: addParticipant()
+    Note over LWC,VoiceAPI: Non-blind transfer
+    
+    VoiceAPI->>ACFlow: Connect to disclosure flow
+    activate ACFlow
+    
+    LWC-->>VoiceAPI: Event: participantadded
+    Note over LWC: Status: Participant added
+    
+    ACFlow->>Customer: Play disclosure message
+    Note over ACFlow,Customer: "This call may be recorded..."
+    
+    ACFlow-->>VoiceAPI: Disclosure complete
+    deactivate ACFlow
+    
+    LWC-->>VoiceAPI: Event: participantremoved
+    Note over LWC: Status: Disclosure finished
+    
+    LWC->>VoiceAPI: resume("Initial_Caller")
+    Note over LWC: Resume customer after disclosure
+    
+    VoiceAPI->>Queue: Transfer customer
+    activate Queue
+    
+    LWC-->>VoiceAPI: Event: participantremoved (agent)
+    Note over LWC: Status: Transfer complete
+    
+    Queue->>Customer: Connected to new destination
+    
+    LWC-->>Agent: transferSuccess = true
+    LWC-->>Agent: transferComplete = true
+    deactivate LWC
+```
+
+## Security Considerations
+
+- The component requires the Lightning__ServiceCloudVoiceToolkitApi capability
+- Transfer destination ARNs should be properly secured and validated
+- Consider implementing additional error handling for production deployments
+
+## License
+
+[Specify your license information here]
